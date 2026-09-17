@@ -125,7 +125,7 @@ export default function NewArrivals() {
                   productId={product.id}
                   productName={product.name}
                   productPrice={product.price}
-                  productClassName={product.className}
+                  productClassName={product.className} productImage={product.image}
                 />
               </div>
             </article>

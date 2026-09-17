@@ -121,6 +121,7 @@ export default function BestSellers() {
                   productName={product.name}
                   productPrice={product.price}
                   productClassName={product.className}
+                  productImage={product.image}
                 />
               </div>
             </article>

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useEffect,
   useMemo,
   useState,
@@ -45,51 +46,66 @@ const validSortOptions = [
   "price-high",
 ];
 
-export default function ShopPage() {
+function ShopLoading() {
+  return (
+    <main className="min-h-screen bg-[var(--ostren-off-white)]">
+      <AnnouncementBar />
+      <Navbar />
+
+      <section className="border-b border-black/5 bg-[var(--ostren-off-white)] px-5 pb-8 pt-9 md:px-8 md:pb-16 md:pt-20 lg:px-12">
+        <div className="mx-auto max-w-[1440px]">
+          <p className="mb-3 text-[8px] font-semibold tracking-[0.26em] text-black/40 uppercase md:mb-4 md:text-[10px]">
+            The collection
+          </p>
+
+          <h1 className="font-serif text-[40px] leading-none tracking-[-0.04em] text-[#111111] md:text-[68px] lg:text-[76px]">
+            Shop ostren
+          </h1>
+        </div>
+      </section>
+
+      <div className="flex min-h-[420px] items-center justify-center">
+        <p className="text-[10px] font-semibold tracking-[0.18em] text-black/45 uppercase">
+          Loading collection...
+        </p>
+      </div>
+
+      <Footer />
+    </main>
+  );
+}
+
+function ShopContent() {
   const searchParams = useSearchParams();
 
-  const urlCategory =
-    searchParams.get("category");
-
-  const urlSort =
-    searchParams.get("sort");
+  const urlCategory = searchParams.get("category");
+  const urlSort = searchParams.get("sort");
 
   const initialCategory =
-    urlCategory &&
-      categorySlugMap[urlCategory]
+    urlCategory && categorySlugMap[urlCategory]
       ? categorySlugMap[urlCategory]
       : "All";
 
   const initialSort =
-    urlSort &&
-      validSortOptions.includes(urlSort)
+    urlSort && validSortOptions.includes(urlSort)
       ? urlSort
       : "featured";
 
-  const [products, setProducts] =
-    useState<ApiProduct[]>([]);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [activeCategory, setActiveCategory] =
+    useState(initialCategory);
 
-  const [error, setError] =
-    useState(false);
-
-  const [
-    activeCategory,
-    setActiveCategory,
-  ] = useState(initialCategory);
-
-  const [sortBy, setSortBy] =
-    useState(initialSort);
+  const [sortBy, setSortBy] = useState(initialSort);
 
   useEffect(() => {
     async function loadProducts() {
       try {
         setError(false);
 
-        const result =
-          await getProducts();
+        const result = await getProducts();
 
         setProducts(result);
       } catch {
@@ -102,94 +118,62 @@ export default function ShopPage() {
     loadProducts();
   }, []);
 
-  const availableCategories =
-    useMemo(() => {
-      const productCategoryNames =
-        new Set(
-          products
-            .map(
-              (product) =>
-                product.category?.name
-            )
-            .filter(
-              (
-                name
-              ): name is string =>
-                Boolean(name)
-            )
-        );
+  const availableCategories = useMemo(() => {
+    const productCategoryNames = new Set(
+      products
+        .map((product) => product.category?.name)
+        .filter(
+          (name): name is string => Boolean(name)
+        )
+    );
 
-      return allowedCategories.filter(
-        (category) =>
-          category === "All" ||
-          productCategoryNames.has(
-            category
-          )
-      );
-    }, [products]);
+    return allowedCategories.filter(
+      (category) =>
+        category === "All" ||
+        productCategoryNames.has(category)
+    );
+  }, [products]);
 
-  const filteredProducts =
-    useMemo(() => {
-      const result =
-        activeCategory === "All"
-          ? [...products]
-          : products.filter(
+  const filteredProducts = useMemo(() => {
+    const result =
+      activeCategory === "All"
+        ? [...products]
+        : products.filter(
             (product) =>
-              product.category
-                ?.name ===
-              activeCategory
+              product.category?.name === activeCategory
           );
 
-      if (
-        sortBy === "price-low"
-      ) {
-        result.sort(
-          (a, b) =>
-            Number(a.price) -
-            Number(b.price)
-        );
-      }
+    if (sortBy === "price-low") {
+      result.sort(
+        (a, b) =>
+          Number(a.price) - Number(b.price)
+      );
+    }
 
-      if (
-        sortBy === "price-high"
-      ) {
-        result.sort(
-          (a, b) =>
-            Number(b.price) -
-            Number(a.price)
-        );
-      }
+    if (sortBy === "price-high") {
+      result.sort(
+        (a, b) =>
+          Number(b.price) - Number(a.price)
+      );
+    }
 
-      if (
-        sortBy === "newest"
-      ) {
-        result.sort(
-          (a, b) =>
-            Number(b.is_new) -
-            Number(a.is_new)
-        );
-      }
+    if (sortBy === "newest") {
+      result.sort(
+        (a, b) =>
+          Number(b.is_new) - Number(a.is_new)
+      );
+    }
 
-      if (
-        sortBy === "best-selling"
-      ) {
-        result.sort(
-          (a, b) =>
-            Number(
-              b.is_best_seller
-            ) -
-            Number(
-              a.is_best_seller
-            )
-        );
-      }
+    if (sortBy === "best-selling") {
+      result.sort(
+        (a, b) =>
+          Number(b.is_best_seller) -
+          Number(a.is_best_seller)
+      );
+    }
 
-      return result;
-    }, [
-      products,
-      activeCategory,
-      sortBy,
-    ]);
+    return result;
+  }, [products, activeCategory, sortBy]);
 
   return (
     <main className="min-h-screen bg-[var(--ostren-off-white)]">
@@ -211,8 +195,8 @@ export default function ShopPage() {
           <p className="mt-4 max-w-[560px] text-[12px] leading-6 text-black/50 md:mt-5 md:text-[15px] md:leading-7">
             Discover thoughtfully designed
             essentials, modern classics and
-            signature pieces made for
-            everyday life.
+            signature pieces made for everyday
+            life.
           </p>
         </div>
       </section>
@@ -234,8 +218,8 @@ export default function ShopPage() {
                 </h2>
 
                 <p className="mt-3 text-sm text-black/45">
-                  Make sure the Ostren Fit
-                  backend is running.
+                  Unable to connect to the Ostren
+                  Fit store.
                 </p>
               </div>
             </div>
@@ -246,36 +230,27 @@ export default function ShopPage() {
                 {/* MOBILE */}
                 <div className="md:hidden">
                   <div className="flex items-center justify-between gap-3 border-y border-black/10 py-3">
-
                     {/* CATEGORY */}
                     <div className="relative flex-1">
                       <select
                         value={activeCategory}
                         onChange={(event) =>
-                          setActiveCategory(event.target.value)
+                          setActiveCategory(
+                            event.target.value
+                          )
                         }
-                        className="
-          h-9
-          w-full
-          appearance-none
-          border-0
-          bg-transparent
-          pr-7
-          text-[10px]
-          font-medium
-          tracking-[0.04em]
-          text-[#111111]
-          outline-none
-        "
+                        className="h-9 w-full appearance-none border-0 bg-transparent pr-7 text-[10px] font-medium tracking-[0.04em] text-[#111111] outline-none"
                       >
-                        {availableCategories.map((category) => (
-                          <option
-                            key={category}
-                            value={category}
-                          >
-                            {category}
-                          </option>
-                        ))}
+                        {availableCategories.map(
+                          (category) => (
+                            <option
+                              key={category}
+                              value={category}
+                            >
+                              {category}
+                            </option>
+                          )
+                        )}
                       </select>
 
                       <ChevronDown
@@ -294,20 +269,7 @@ export default function ShopPage() {
                         onChange={(event) =>
                           setSortBy(event.target.value)
                         }
-                        className="
-          h-9
-          w-full
-          appearance-none
-          border-0
-          bg-transparent
-          pr-7
-          text-right
-          text-[10px]
-          font-medium
-          tracking-[0.04em]
-          text-[#111111]
-          outline-none
-        "
+                        className="h-9 w-full appearance-none border-0 bg-transparent pr-7 text-right text-[10px] font-medium tracking-[0.04em] text-[#111111] outline-none"
                       >
                         <option value="featured">
                           Featured
@@ -336,7 +298,6 @@ export default function ShopPage() {
                         className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-black/45"
                       />
                     </div>
-
                   </div>
 
                   <p className="mt-3 text-[8px] font-medium tracking-[0.14em] text-black/35 uppercase">
@@ -354,8 +315,7 @@ export default function ShopPage() {
                       {availableCategories.map(
                         (category) => {
                           const isActive =
-                            activeCategory ===
-                            category;
+                            activeCategory === category;
 
                           return (
                             <button
@@ -376,9 +336,10 @@ export default function ShopPage() {
                                 uppercase
                                 transition-colors
                                 duration-200
-                                ${isActive
-                                  ? "text-[#111111]"
-                                  : "text-black/35 hover:text-black/70"
+                                ${
+                                  isActive
+                                    ? "text-[#111111]"
+                                    : "text-black/35 hover:text-black/70"
                                 }
                               `}
                             >
@@ -393,9 +354,10 @@ export default function ShopPage() {
                                   bg-[#111111]
                                   transition-all
                                   duration-300
-                                  ${isActive
-                                    ? "w-full opacity-100"
-                                    : "w-0 opacity-0"
+                                  ${
+                                    isActive
+                                      ? "w-full opacity-100"
+                                      : "w-0 opacity-0"
                                   }
                                 `}
                               />
@@ -416,27 +378,10 @@ export default function ShopPage() {
                         value={sortBy}
                         onChange={(event) =>
                           setSortBy(
-                            event.target
-                              .value
+                            event.target.value
                           )
                         }
-                        className="
-                          h-10
-                          min-w-[170px]
-                          appearance-none
-                          border
-                          border-black/10
-                          bg-[#F8F5EF]
-                          pl-4
-                          pr-10
-                          text-[10px]
-                          font-medium
-                          text-[#111111]
-                          outline-none
-                          transition-colors
-                          hover:border-black/25
-                          focus:border-black/30
-                        "
+                        className="h-10 min-w-[170px] appearance-none border border-black/10 bg-[#F8F5EF] pl-4 pr-10 text-[10px] font-medium text-[#111111] outline-none transition-colors hover:border-black/25 focus:border-black/30"
                       >
                         <option value="featured">
                           Featured
@@ -469,14 +414,11 @@ export default function ShopPage() {
                 </div>
               </div>
 
-              {/* PRODUCT COUNT - DESKTOP ONLY */}
+              {/* PRODUCT COUNT - DESKTOP */}
               <div className="mb-7 hidden items-center justify-between md:flex">
                 <p className="text-[9px] font-medium tracking-[0.14em] text-black/40 uppercase">
-                  {
-                    filteredProducts.length
-                  }{" "}
-                  {filteredProducts.length ===
-                    1
+                  {filteredProducts.length}{" "}
+                  {filteredProducts.length === 1
                     ? "product"
                     : "products"}
                 </p>
@@ -500,5 +442,13 @@ export default function ShopPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<ShopLoading />}>
+      <ShopContent />
+    </Suspense>
   );
 }
