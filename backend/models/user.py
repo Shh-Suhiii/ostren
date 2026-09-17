@@ -1,6 +1,9 @@
 # backend/models/user.py
 
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash,
+)
 from extensions import db
 
 
@@ -46,6 +49,18 @@ class User(db.Model):
         default=True
     )
 
+    # PASSWORD RESET
+    reset_token_hash = db.Column(
+        db.String(64),
+        nullable=True,
+        index=True
+    )
+
+    reset_token_expires_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
     created_at = db.Column(
         db.DateTime,
         server_default=db.func.now()
@@ -58,13 +73,19 @@ class User(db.Model):
     )
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = generate_password_hash(
+            password
+        )
 
     def check_password(self, password):
         return check_password_hash(
             self.password_hash,
             password
         )
+
+    def clear_password_reset(self):
+        self.reset_token_hash = None
+        self.reset_token_expires_at = None
 
     def to_dict(self):
         return {

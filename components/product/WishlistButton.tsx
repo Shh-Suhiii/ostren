@@ -1,13 +1,21 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import {
+  Heart,
+} from "lucide-react";
 
-import { useWishlist } from "@/context/WishlistContext";
+import {
+  useWishlist,
+} from "@/context/WishlistContext";
 
 interface WishlistButtonProps {
   productId: number;
   productName: string;
   productPrice: number;
+
+  // Actual product image
+  productImage: string;
+
   productClassName: string;
 }
 
@@ -15,6 +23,7 @@ export default function WishlistButton({
   productId,
   productName,
   productPrice,
+  productImage,
   productClassName,
 }: WishlistButtonProps) {
   const {
@@ -23,16 +32,30 @@ export default function WishlistButton({
   } = useWishlist();
 
   const active =
-    isInWishlist(productId);
+    isInWishlist(
+      productId
+    );
 
-  const handleWishlist = () => {
-    toggleWishlist({
-      id: productId,
-      name: productName,
-      price: productPrice,
-      className: productClassName,
-    });
-  };
+  const handleWishlist =
+    () => {
+      toggleWishlist({
+        id:
+          productId,
+
+        name:
+          productName,
+
+        price:
+          productPrice,
+
+        // Save actual image
+        image:
+          productImage,
+
+        className:
+          productClassName,
+      });
+    };
 
   return (
     <button
@@ -42,8 +65,12 @@ export default function WishlistButton({
           ? `Remove ${productName} from wishlist`
           : `Add ${productName} to wishlist`
       }
-      aria-pressed={active}
-      onClick={handleWishlist}
+      aria-pressed={
+        active
+      }
+      onClick={
+        handleWishlist
+      }
       className={`absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-all hover:scale-105 ${
         active
           ? "text-[#0877b5]"

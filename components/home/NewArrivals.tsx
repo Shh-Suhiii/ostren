@@ -7,41 +7,41 @@ import WishlistButton from "@/components/product/WishlistButton";
 const products = [
   {
     id: 1,
-    name: "Relaxed Fit Textured Shirt",
-    price: 1499,
+    name: "Mountain Graphic Oversized Tee",
+    price: 1299,
     label: "New",
-    image: "/products/new-1.jpg",
-    className: "bg-[#f3f3f1]",
+    image: "/arrivals/ostren-tee.png",
+    className: "bg-[var(--surface-soft)]",
   },
   {
     id: 2,
-    name: "Essential Oversized Tee",
-    price: 1199,
+    name: "Mountain Graphic Hoodie",
+    price: 2199,
     label: "New",
-    image: "/products/new-2.jpg",
-    className: "bg-[#efefed]",
+    image: "/arrivals/ostren-hood.png",
+    className: "bg-[var(--surface-soft)]",
   },
   {
     id: 3,
-    name: "Straight Fit Trousers",
-    price: 1799,
+    name: "Relaxed Logo Joggers",
+    price: 1699,
     label: "Trending",
-    image: "/products/new-3.jpg",
-    className: "bg-[#f1f1ef]",
+    image: "/arrivals/ostren-jogg.png",
+    className: "bg-[var(--surface-soft)]",
   },
   {
     id: 4,
-    name: "Minimal Everyday Shirt",
-    price: 1599,
+    name: "Minimal Gold Jewelry Set",
+    price: 999,
     label: "New",
-    image: "/products/new-4.jpg",
-    className: "bg-[#eeeeec]",
+    image: "/arrivals/ostren-jwel.png",
+    className: "bg-[var(--surface-soft)]",
   },
 ];
 
 export default function NewArrivals() {
   return (
-    <section className="bg-white py-16 md:py-20 lg:py-24">
+    <section className="bg-[var(--background)] py-16 md:py-20 lg:py-24">
       <div className="mx-auto max-w-[1600px] px-5 md:px-8 lg:px-10">
 
         {/* HEADER */}
@@ -65,13 +65,13 @@ export default function NewArrivals() {
             <ArrowRight
               size={13}
               strokeWidth={1.5}
-              className="transition-transform group-hover:translate-x-1"
+              className="transition-transform duration-300 group-hover:translate-x-1"
             />
           </Link>
         </div>
 
         {/* PRODUCT GRID */}
-        <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:gap-x-4 md:gap-y-10 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-9 md:gap-x-4 md:gap-y-10 lg:grid-cols-4">
           {products.map((product) => (
             <article
               key={product.id}
@@ -87,20 +87,21 @@ export default function NewArrivals() {
                 >
                   <Image
                     src={product.image}
-                    alt={product.name}
+                    alt={`${product.name} - Ostren Fit`}
                     fill
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]"
-                    sizes="(max-width: 1024px) 50vw, 25vw"
+                    priority
+                    className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                    sizes="(max-width: 767px) 50vw, 25vw"
                   />
 
                   {/* PRODUCT LABEL */}
-                  <div className="absolute left-3 top-3 z-10 bg-white px-2.5 py-1.5 text-[8px] font-medium tracking-[0.14em] text-black uppercase">
+                  <div className="absolute left-3 top-3 z-10 bg-[#F8F5EF]/95 px-2.5 py-1.5 text-[8px] font-semibold tracking-[0.14em] text-[#111111] uppercase backdrop-blur-sm">
                     {product.label}
                   </div>
 
                   {/* QUICK VIEW */}
                   <div className="absolute inset-x-3 bottom-3 hidden translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:block">
-                    <div className="bg-white py-3 text-center text-[9px] font-medium tracking-[0.15em] text-black uppercase">
+                    <div className="bg-[#F8F5EF]/95 py-3 text-center text-[9px] font-semibold tracking-[0.15em] text-[#111111] uppercase backdrop-blur-sm transition-colors duration-300 group-hover:bg-[#111111] group-hover:text-white">
                       Quick View
                     </div>
                   </div>
@@ -108,11 +109,11 @@ export default function NewArrivals() {
 
                 {/* PRODUCT INFO */}
                 <div className="pt-3.5 md:pt-4">
-                  <h3 className="pr-6 text-[11px] font-medium leading-5 text-[#111111] md:text-[12px]">
+                  <h3 className="pr-8 text-[11px] font-medium leading-5 text-[#111111] md:text-[12px]">
                     {product.name}
                   </h3>
 
-                  <p className="mt-1 text-[11px] text-black/60 md:text-[12px]">
+                  <p className="mt-1 text-[11px] text-black/55 md:text-[12px]">
                     ₹{product.price.toLocaleString("en-IN")}
                   </p>
                 </div>
@@ -134,7 +135,7 @@ export default function NewArrivals() {
         {/* MOBILE SHOP ALL */}
         <Link
           href="/shop?sort=newest"
-          className="mt-9 flex items-center justify-center gap-2 border border-black/20 py-3.5 text-[9px] font-medium tracking-[0.15em] uppercase sm:hidden"
+          className="mt-9 flex items-center justify-center gap-2 border border-black/20 py-3.5 text-[9px] font-semibold tracking-[0.15em] text-[#111111] uppercase transition-colors duration-300 hover:bg-[#111111] hover:text-white sm:hidden"
         >
           Shop All
 
@@ -143,6 +144,7 @@ export default function NewArrivals() {
             strokeWidth={1.5}
           />
         </Link>
+
       </div>
     </section>
   );

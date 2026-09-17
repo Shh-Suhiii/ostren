@@ -18,6 +18,25 @@ import {
   getProducts,
 } from "@/lib/products-api";
 
+const allowedCategories = [
+  "All",
+  "T-Shirts",
+  "Hoodies",
+  "Joggers",
+  "Jewelry",
+  "Mugs & Bottles",
+  "Photo Frames",
+];
+
+const categorySlugMap: Record<string, string> = {
+  "t-shirts": "T-Shirts",
+  hoodies: "Hoodies",
+  joggers: "Joggers",
+  jewelry: "Jewelry",
+  "mugs-bottles": "Mugs & Bottles",
+  "photo-frames": "Photo Frames",
+};
+
 const validSortOptions = [
   "featured",
   "newest",
@@ -27,14 +46,25 @@ const validSortOptions = [
 ];
 
 export default function ShopPage() {
-  const searchParams =
-    useSearchParams();
+  const searchParams = useSearchParams();
 
   const urlCategory =
     searchParams.get("category");
 
   const urlSort =
     searchParams.get("sort");
+
+  const initialCategory =
+    urlCategory &&
+      categorySlugMap[urlCategory]
+      ? categorySlugMap[urlCategory]
+      : "All";
+
+  const initialSort =
+    urlSort &&
+      validSortOptions.includes(urlSort)
+      ? urlSort
+      : "featured";
 
   const [products, setProducts] =
     useState<ApiProduct[]>([]);
@@ -45,22 +75,19 @@ export default function ShopPage() {
   const [error, setError] =
     useState(false);
 
-  const [activeCategory, setActiveCategory] =
-    useState(
-      urlCategory || "All"
-    );
+  const [
+    activeCategory,
+    setActiveCategory,
+  ] = useState(initialCategory);
 
   const [sortBy, setSortBy] =
-    useState(
-      urlSort &&
-        validSortOptions.includes(urlSort)
-        ? urlSort
-        : "featured"
-    );
+    useState(initialSort);
 
   useEffect(() => {
     async function loadProducts() {
       try {
+        setError(false);
+
         const result =
           await getProducts();
 
@@ -75,22 +102,30 @@ export default function ShopPage() {
     loadProducts();
   }, []);
 
-  const categories =
+  const availableCategories =
     useMemo(() => {
-      const names = products
-        .map(
-          (product) =>
-            product.category?.name
-        )
-        .filter(
-          (name): name is string =>
-            Boolean(name)
+      const productCategoryNames =
+        new Set(
+          products
+            .map(
+              (product) =>
+                product.category?.name
+            )
+            .filter(
+              (
+                name
+              ): name is string =>
+                Boolean(name)
+            )
         );
 
-      return [
-        "All",
-        ...Array.from(new Set(names)),
-      ];
+      return allowedCategories.filter(
+        (category) =>
+          category === "All" ||
+          productCategoryNames.has(
+            category
+          )
+      );
     }, [products]);
 
   const filteredProducts =
@@ -99,26 +134,35 @@ export default function ShopPage() {
         activeCategory === "All"
           ? [...products]
           : products.filter(
-              (product) =>
-                product.category?.name ===
-                activeCategory
-            );
+            (product) =>
+              product.category
+                ?.name ===
+              activeCategory
+          );
 
-      if (sortBy === "price-low") {
+      if (
+        sortBy === "price-low"
+      ) {
         result.sort(
           (a, b) =>
-            a.price - b.price
+            Number(a.price) -
+            Number(b.price)
         );
       }
 
-      if (sortBy === "price-high") {
+      if (
+        sortBy === "price-high"
+      ) {
         result.sort(
           (a, b) =>
-            b.price - a.price
+            Number(b.price) -
+            Number(a.price)
         );
       }
 
-      if (sortBy === "newest") {
+      if (
+        sortBy === "newest"
+      ) {
         result.sort(
           (a, b) =>
             Number(b.is_new) -
@@ -148,156 +192,298 @@ export default function ShopPage() {
     ]);
 
   return (
-    <main className="min-h-screen bg-[#fafaf8]">
-
+    <main className="min-h-screen bg-[var(--ostren-off-white)]">
       <AnnouncementBar />
+
       <Navbar />
 
-      <section className="bg-white px-5 pb-12 pt-16 md:px-8 md:pb-16 md:pt-24 lg:px-12">
-
+      {/* HERO */}
+      <section className="border-b border-black/5 bg-[var(--ostren-off-white)] px-5 pb-8 pt-9 md:px-8 md:pb-16 md:pt-20 lg:px-12">
         <div className="mx-auto max-w-[1440px]">
-
-          <p className="mb-4 text-[10px] font-semibold tracking-[0.3em] text-[#0877b5] uppercase">
+          <p className="mb-3 text-[8px] font-semibold tracking-[0.26em] text-black/40 uppercase md:mb-4 md:text-[10px]">
             The collection
           </p>
 
-          <h1 className="font-serif text-5xl tracking-[-0.025em] text-[#022a46] md:text-7xl">
+          <h1 className="font-serif text-[40px] leading-none tracking-[-0.04em] text-[#111111] md:text-[68px] lg:text-[76px]">
             Shop ostren
           </h1>
 
-          <p className="mt-5 max-w-xl text-sm leading-7 text-black/50 md:text-base">
-            Discover thoughtfully designed essentials,
-            modern classics and signature pieces made
-            for everyday life.
+          <p className="mt-4 max-w-[560px] text-[12px] leading-6 text-black/50 md:mt-5 md:text-[15px] md:leading-7">
+            Discover thoughtfully designed
+            essentials, modern classics and
+            signature pieces made for
+            everyday life.
           </p>
-
         </div>
-
       </section>
 
-      <section className="px-5 py-12 md:px-8 md:py-16 lg:px-12">
-
+      {/* PRODUCTS */}
+      <section className="px-5 py-5 md:px-8 md:py-10 lg:px-12">
         <div className="mx-auto max-w-[1440px]">
-
           {loading ? (
-            <div className="flex min-h-[400px] items-center justify-center">
-
-              <p className="text-[10px] font-semibold tracking-[0.2em] text-[#063b63] uppercase">
+            <div className="flex min-h-[420px] items-center justify-center">
+              <p className="text-[10px] font-semibold tracking-[0.18em] text-black/45 uppercase">
                 Loading collection...
               </p>
-
             </div>
           ) : error ? (
-            <div className="flex min-h-[400px] items-center justify-center text-center">
-
+            <div className="flex min-h-[420px] items-center justify-center text-center">
               <div>
-                <h2 className="font-serif text-3xl text-[#022a46]">
+                <h2 className="font-serif text-3xl text-[#111111]">
                   Unable to load products.
                 </h2>
 
                 <p className="mt-3 text-sm text-black/45">
-                  Make sure the ostren backend
-                  is running.
+                  Make sure the Ostren Fit
+                  backend is running.
                 </p>
               </div>
-
             </div>
           ) : (
             <>
+              {/* FILTER + SORT */}
+              <div className="mb-6 md:mb-10 md:border-b md:border-black/10">
+                {/* MOBILE */}
+                <div className="md:hidden">
+                  <div className="flex items-center justify-between gap-3 border-y border-black/10 py-3">
 
-              {/* Toolbar */}
-              <div className="mb-10 flex flex-col gap-6 border-b border-black/10 pb-6 md:flex-row md:items-center md:justify-between">
-
-                {/* Category filters */}
-                <div className="flex gap-2 overflow-x-auto pb-2">
-
-                  {categories.map(
-                    (category) => (
-                      <button
-                        key={category}
-                        type="button"
-                        onClick={() =>
-                          setActiveCategory(
-                            category
-                          )
+                    {/* CATEGORY */}
+                    <div className="relative flex-1">
+                      <select
+                        value={activeCategory}
+                        onChange={(event) =>
+                          setActiveCategory(event.target.value)
                         }
-                        className={`shrink-0 border px-5 py-3 text-[9px] font-semibold tracking-[0.16em] uppercase transition-colors ${
-                          activeCategory ===
-                          category
-                            ? "border-[#063b63] bg-[#063b63] text-white"
-                            : "border-[#063b63]/15 bg-white text-[#063b63]"
-                        }`}
+                        className="
+          h-9
+          w-full
+          appearance-none
+          border-0
+          bg-transparent
+          pr-7
+          text-[10px]
+          font-medium
+          tracking-[0.04em]
+          text-[#111111]
+          outline-none
+        "
                       >
-                        {category}
-                      </button>
-                    )
-                  )}
+                        {availableCategories.map((category) => (
+                          <option
+                            key={category}
+                            value={category}
+                          >
+                            {category}
+                          </option>
+                        ))}
+                      </select>
 
-                </div>
+                      <ChevronDown
+                        size={12}
+                        strokeWidth={1.5}
+                        className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-black/45"
+                      />
+                    </div>
 
-                {/* Sort */}
-                <div className="flex items-center gap-3">
+                    <div className="h-5 w-px bg-black/10" />
 
-                  <span className="text-[9px] font-semibold tracking-[0.15em] text-black/40 uppercase">
-                    Sort
-                  </span>
+                    {/* SORT */}
+                    <div className="relative flex-1">
+                      <select
+                        value={sortBy}
+                        onChange={(event) =>
+                          setSortBy(event.target.value)
+                        }
+                        className="
+          h-9
+          w-full
+          appearance-none
+          border-0
+          bg-transparent
+          pr-7
+          text-right
+          text-[10px]
+          font-medium
+          tracking-[0.04em]
+          text-[#111111]
+          outline-none
+        "
+                      >
+                        <option value="featured">
+                          Featured
+                        </option>
 
-                  <div className="relative">
+                        <option value="newest">
+                          Newest
+                        </option>
 
-                    <select
-                      value={sortBy}
-                      onChange={(event) =>
-                        setSortBy(
-                          event.target.value
-                        )
-                      }
-                      className="h-10 appearance-none border border-[#063b63]/15 bg-white pl-4 pr-10 text-[10px] font-medium text-[#063b63] outline-none"
-                    >
+                        <option value="best-selling">
+                          Best sellers
+                        </option>
 
-                      <option value="featured">
-                        Featured
-                      </option>
+                        <option value="price-low">
+                          Price: Low to high
+                        </option>
 
-                      <option value="newest">
-                        Newest
-                      </option>
+                        <option value="price-high">
+                          Price: High to low
+                        </option>
+                      </select>
 
-                      <option value="best-selling">
-                        Best sellers
-                      </option>
-
-                      <option value="price-low">
-                        Price: Low to high
-                      </option>
-
-                      <option value="price-high">
-                        Price: High to low
-                      </option>
-
-                    </select>
-
-                    <ChevronDown
-                      size={14}
-                      strokeWidth={1.5}
-                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#063b63]"
-                    />
+                      <ChevronDown
+                        size={12}
+                        strokeWidth={1.5}
+                        className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-black/45"
+                      />
+                    </div>
 
                   </div>
 
+                  <p className="mt-3 text-[8px] font-medium tracking-[0.14em] text-black/35 uppercase">
+                    {filteredProducts.length}{" "}
+                    {filteredProducts.length === 1
+                      ? "product"
+                      : "products"}
+                  </p>
                 </div>
 
+                {/* DESKTOP */}
+                <div className="hidden pb-4 md:flex md:items-end md:justify-between md:gap-8">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex gap-8 overflow-x-auto scrollbar-hide">
+                      {availableCategories.map(
+                        (category) => {
+                          const isActive =
+                            activeCategory ===
+                            category;
+
+                          return (
+                            <button
+                              key={category}
+                              type="button"
+                              onClick={() =>
+                                setActiveCategory(
+                                  category
+                                )
+                              }
+                              className={`
+                                relative
+                                shrink-0
+                                pb-3
+                                text-[11px]
+                                font-medium
+                                tracking-[0.12em]
+                                uppercase
+                                transition-colors
+                                duration-200
+                                ${isActive
+                                  ? "text-[#111111]"
+                                  : "text-black/35 hover:text-black/70"
+                                }
+                              `}
+                            >
+                              {category}
+
+                              <span
+                                className={`
+                                  absolute
+                                  bottom-0
+                                  left-0
+                                  h-[1.5px]
+                                  bg-[#111111]
+                                  transition-all
+                                  duration-300
+                                  ${isActive
+                                    ? "w-full opacity-100"
+                                    : "w-0 opacity-0"
+                                  }
+                                `}
+                              />
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="text-[9px] font-semibold tracking-[0.14em] text-black/35 uppercase">
+                      Sort by
+                    </span>
+
+                    <div className="relative">
+                      <select
+                        value={sortBy}
+                        onChange={(event) =>
+                          setSortBy(
+                            event.target
+                              .value
+                          )
+                        }
+                        className="
+                          h-10
+                          min-w-[170px]
+                          appearance-none
+                          border
+                          border-black/10
+                          bg-[#F8F5EF]
+                          pl-4
+                          pr-10
+                          text-[10px]
+                          font-medium
+                          text-[#111111]
+                          outline-none
+                          transition-colors
+                          hover:border-black/25
+                          focus:border-black/30
+                        "
+                      >
+                        <option value="featured">
+                          Featured
+                        </option>
+
+                        <option value="newest">
+                          Newest
+                        </option>
+
+                        <option value="best-selling">
+                          Best sellers
+                        </option>
+
+                        <option value="price-low">
+                          Price: Low to high
+                        </option>
+
+                        <option value="price-high">
+                          Price: High to low
+                        </option>
+                      </select>
+
+                      <ChevronDown
+                        size={13}
+                        strokeWidth={1.5}
+                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/45"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <p className="mb-7 text-[9px] font-semibold tracking-[0.15em] text-black/40 uppercase">
-                {filteredProducts.length}{" "}
-                {filteredProducts.length ===
-                1
-                  ? "product"
-                  : "products"}
-              </p>
+              {/* PRODUCT COUNT - DESKTOP ONLY */}
+              <div className="mb-7 hidden items-center justify-between md:flex">
+                <p className="text-[9px] font-medium tracking-[0.14em] text-black/40 uppercase">
+                  {
+                    filteredProducts.length
+                  }{" "}
+                  {filteredProducts.length ===
+                    1
+                    ? "product"
+                    : "products"}
+                </p>
+              </div>
 
-              <div className="grid grid-cols-2 gap-x-3 gap-y-12 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4">
-
+              {/* PRODUCT GRID */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-9 md:grid-cols-3 md:gap-x-5 md:gap-y-12 lg:grid-cols-4">
                 {filteredProducts.map(
                   (product) => (
                     <ProductCard
@@ -306,18 +492,13 @@ export default function ShopPage() {
                     />
                   )
                 )}
-
               </div>
-
             </>
           )}
-
         </div>
-
       </section>
 
       <Footer />
-
     </main>
   );
 }

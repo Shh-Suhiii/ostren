@@ -65,11 +65,52 @@ class Product(db.Model):
         default=False
     )
 
+    # =====================================================
+    # CUSTOMIZATION
+    # =====================================================
+
+    is_customizable = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False
+    )
+
+    customization_type = db.Column(
+        db.String(50),
+        nullable=True
+    )
+
+    allow_custom_image = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False
+    )
+
+    allow_custom_text = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=False
+    )
+
+    customization_price = db.Column(
+        db.Numeric(10, 2),
+        nullable=False,
+        default=0
+    )
+
+    # =====================================================
+    # CATEGORY
+    # =====================================================
+
     category_id = db.Column(
         db.Integer,
         db.ForeignKey("categories.id"),
         nullable=True
     )
+
+    # =====================================================
+    # TIMESTAMPS
+    # =====================================================
 
     created_at = db.Column(
         db.DateTime,
@@ -81,6 +122,10 @@ class Product(db.Model):
         server_default=db.func.now(),
         onupdate=db.func.now()
     )
+
+    # =====================================================
+    # RELATIONSHIPS
+    # =====================================================
 
     category = db.relationship(
         "Category",
@@ -99,32 +144,52 @@ class Product(db.Model):
         cascade="all, delete-orphan"
     )
 
+    # =====================================================
+    # SERIALIZATION
+    # =====================================================
+
     def to_dict(self):
         return {
             "id": self.id,
             "name": self.name,
             "slug": self.slug,
             "description": self.description,
+
             "price": float(self.price),
+
             "compare_price": (
                 float(self.compare_price)
-                if self.compare_price
+                if self.compare_price is not None
                 else None
             ),
+
             "sku": self.sku,
             "stock": self.stock,
+
             "is_active": self.is_active,
             "is_new": self.is_new,
             "is_best_seller": self.is_best_seller,
+
+            # Customization
+            "is_customizable": self.is_customizable,
+            "customization_type": self.customization_type,
+            "allow_custom_image": self.allow_custom_image,
+            "allow_custom_text": self.allow_custom_text,
+            "customization_price": float(
+                self.customization_price or 0
+            ),
+
             "category": (
                 self.category.to_dict()
                 if self.category
                 else None
             ),
+
             "images": [
                 image.to_dict()
                 for image in self.images
             ],
+
             "variants": [
                 variant.to_dict()
                 for variant in self.variants

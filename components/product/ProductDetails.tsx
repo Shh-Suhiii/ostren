@@ -54,8 +54,14 @@ export default function ProductDetails({
     toggleWishlist({
       id: product.id,
       name: product.name,
-      price: Number(product.price),
-      className: productClassName,
+      price: Number(
+        product.price
+      ),
+      image:
+        images[0]?.image_url ||
+        "",
+      className:
+        productClassName,
     });
   };
 
@@ -96,18 +102,17 @@ export default function ProductDetails({
 
           {(product.is_new ||
             product.is_best_seller) && (
-            <div
-              className={`absolute left-4 top-4 z-10 px-3 py-1.5 text-[8px] font-semibold tracking-[0.16em] uppercase ${
-                product.is_best_seller
+              <div
+                className={`absolute left-4 top-4 z-10 px-3 py-1.5 text-[8px] font-semibold tracking-[0.16em] uppercase ${product.is_best_seller
                   ? "bg-[#063b63] text-white"
                   : "bg-white/85 text-[#063b63] backdrop-blur-sm"
-              }`}
-            >
-              {product.is_best_seller
-                ? "Bestseller"
-                : "New"}
-            </div>
-          )}
+                  }`}
+              >
+                {product.is_best_seller
+                  ? "Bestseller"
+                  : "New"}
+              </div>
+            )}
 
           {images.length > 0 ? (
             <img
@@ -143,34 +148,34 @@ export default function ProductDetails({
 
           {images.length > 0
             ? images
-                .slice(0, 4)
-                .map((image) => (
-                  <div
-                    key={image.id}
-                    className="aspect-square overflow-hidden bg-[#eef2f3]"
-                  >
-                    <img
-                      src={image.image_url}
-                      alt={
-                        image.alt_text ||
-                        product.name
-                      }
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ))
+              .slice(0, 4)
+              .map((image) => (
+                <div
+                  key={image.id}
+                  className="aspect-square overflow-hidden bg-[#eef2f3]"
+                >
+                  <img
+                    src={image.image_url}
+                    alt={
+                      image.alt_text ||
+                      product.name
+                    }
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))
             : [1, 2, 3, 4].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className={`flex aspect-square items-center justify-center ${productClassName}`}
-                  >
-                    <span className="font-serif text-xs text-[#063b63]/20">
-                      O
-                    </span>
-                  </div>
-                )
-              )}
+              (item) => (
+                <div
+                  key={item}
+                  className={`flex aspect-square items-center justify-center ${productClassName}`}
+                >
+                  <span className="font-serif text-xs text-[#063b63]/20">
+                    O
+                  </span>
+                </div>
+              )
+            )}
 
         </div>
 
@@ -236,11 +241,10 @@ export default function ProductDetails({
             aria-pressed={
               wishlistActive
             }
-            className={`flex h-12 items-center gap-3 border px-5 text-[10px] font-semibold tracking-[0.16em] uppercase transition-all ${
-              wishlistActive
-                ? "border-[#0877b5] bg-[#e9f4f9] text-[#0877b5]"
-                : "border-[#063b63]/15 text-[#063b63] hover:bg-[#f5f7f7]"
-            }`}
+            className={`flex h-12 items-center gap-3 border px-5 text-[10px] font-semibold tracking-[0.16em] uppercase transition-all ${wishlistActive
+              ? "border-[#0877b5] bg-[#e9f4f9] text-[#0877b5]"
+              : "border-[#063b63]/15 text-[#063b63] hover:bg-[#f5f7f7]"
+              }`}
           >
             <Heart
               size={15}
@@ -279,15 +283,27 @@ export default function ProductDetails({
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
           <AddToCartButton
-            productId={product.id}
-            productName={product.name}
-            productPrice={Number(
-              product.price
-            )}
+            productId={
+              product.id
+            }
+            productName={
+              product.name
+            }
+            productPrice={
+              Number(
+                product.price
+              )
+            }
+            productImage={
+              images[0]?.image_url ||
+              ""
+            }
             productClassName={
               productClassName
             }
-            quantity={quantity}
+            quantity={
+              quantity
+            }
           />
 
           <button

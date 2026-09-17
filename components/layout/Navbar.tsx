@@ -5,10 +5,10 @@ import Link from "next/link";
 import {
   Heart,
   Menu,
-  Search,
   ShoppingBag,
   User,
   X,
+  ArrowUpRight,
 } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 
@@ -25,61 +25,34 @@ export default function Navbar() {
   );
 
   const { cartCount } = useCart();
-
-  const {
-    wishlistCount,
-    wishlistReady,
-  } = useWishlist();
+  const { wishlistCount, wishlistReady } = useWishlist();
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-black/10 bg-white">
-        <div className="relative mx-auto flex h-[78px] max-w-[1600px] items-center px-5 md:px-8 lg:px-10">
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-50 border-b border-black/10 bg-[var(--ostren-off-white)]/95 backdrop-blur-md">
+        <div className="relative mx-auto flex h-[72px] max-w-[1600px] items-center px-4 sm:px-5 md:px-8 lg:h-[78px] lg:px-10">
 
           {/* LEFT */}
           <div className="flex flex-1 items-center">
-
-            {/* Mobile Menu */}
             <button
               type="button"
-              onClick={() => setMobileOpen((prev) => !prev)}
-              className="flex items-center justify-center transition-opacity hover:opacity-50 lg:hidden"
-              aria-label="Toggle menu"
-              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen(true)}
+              className="inline-flex h-9 w-9 items-center justify-center text-[#111111] transition-opacity hover:opacity-50 lg:hidden"
+              aria-label="Open menu"
             >
-              {mobileOpen ? (
-                <X size={22} strokeWidth={1.4} />
-              ) : (
-                <Menu size={22} strokeWidth={1.4} />
-              )}
+              <Menu size={21} strokeWidth={1.4} />
             </button>
 
-            {/* Desktop Navigation */}
             <nav className="hidden items-center gap-8 lg:flex">
-              <Link
-                href="/shop"
-                className="text-[11px] font-medium tracking-[0.14em] uppercase transition-opacity hover:opacity-50"
-              >
-                Shop
-              </Link>
-
-              <Link
-                href="/categories"
-                className="text-[11px] font-medium tracking-[0.14em] uppercase transition-opacity hover:opacity-50"
-              >
-                Categories
-              </Link>
-
-              <Link
-                href="/about"
-                className="text-[11px] font-medium tracking-[0.14em] uppercase transition-opacity hover:opacity-50"
-              >
-                About
-              </Link>
+              <NavLink href="/shop">Shop</NavLink>
+              <NavLink href="/categories">Categories</NavLink>
+              <NavLink href="/customize">Customize</NavLink>
+              <NavLink href="/about">About</NavLink>
             </nav>
           </div>
 
-          {/* CENTER LOGO */}
+          {/* LOGO */}
           <Link
             href="/"
             aria-label="Ostren Fit home"
@@ -88,30 +61,22 @@ export default function Navbar() {
             <Image
               src="/logo/ostren-logo.png"
               alt="Ostren Fit"
-              width={120}
-              height={60}
-              className="h-auto w-[88px] object-contain md:w-[102px]"
+              width={180}
+              height={120}
+              className="h-auto w-[74px] object-contain md:w-[90px] lg:w-[96px]"
               priority
             />
           </Link>
 
-          {/* RIGHT ACTIONS */}
+          {/* RIGHT */}
           <div className="ml-auto flex flex-1 items-center justify-end gap-4 md:gap-5">
-
-            <Link
-              href="/search"
-              aria-label="Search"
-              className="hidden transition-opacity hover:opacity-50 sm:inline-flex"
-            >
-              <Search size={20} strokeWidth={1.4} />
-            </Link>
 
             <Link
               href="/account"
               aria-label="Account"
               className="hidden transition-opacity hover:opacity-50 sm:inline-flex"
             >
-              <User size={20} strokeWidth={1.4} />
+              <User size={19} strokeWidth={1.4} />
             </Link>
 
             <Link
@@ -119,15 +84,11 @@ export default function Navbar() {
               aria-label="Wishlist"
               className="relative hidden transition-opacity hover:opacity-50 sm:inline-flex"
             >
-              <Heart size={20} strokeWidth={1.4} />
+              <Heart size={19} strokeWidth={1.4} />
 
-              {mounted &&
-                wishlistReady &&
-                wishlistCount > 0 && (
-                  <span className="absolute -right-2.5 -top-2.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-black px-1 text-[8px] font-semibold text-white">
-                    {wishlistCount}
-                  </span>
-                )}
+              {mounted && wishlistReady && wishlistCount > 0 && (
+                <CountBadge count={wishlistCount} />
+              )}
             </Link>
 
             <Link
@@ -135,99 +96,245 @@ export default function Navbar() {
               aria-label="Cart"
               className="relative inline-flex transition-opacity hover:opacity-50"
             >
-              <ShoppingBag size={20} strokeWidth={1.4} />
+              <ShoppingBag size={19} strokeWidth={1.4} />
 
               {mounted && cartCount > 0 && (
-                <span className="absolute -right-2.5 -top-2.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-black px-1 text-[8px] font-semibold text-white">
-                  {cartCount}
-                </span>
+                <CountBadge count={cartCount} />
               )}
             </Link>
           </div>
         </div>
       </header>
 
-      {/* MOBILE MENU */}
+      {/* BACKDROP */}
       {mobileOpen && (
-        <div className="fixed inset-x-0 top-[78px] z-40 border-b border-black/10 bg-white lg:hidden">
-          <div className="px-5 py-7">
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-[1px] lg:hidden"
+        />
+      )}
 
-            <nav className="flex flex-col">
+      {/* MOBILE DRAWER */}
+      <aside
+        className={`
+          fixed left-0 top-0 z-[70]
+          h-[100dvh] w-[86%] max-w-[360px]
+          bg-[var(--ostren-off-white)]
+          shadow-2xl
+          transition-transform duration-300 ease-out
+          lg:hidden
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        {/* DRAWER HEADER */}
+        <div className="flex h-[72px] items-center justify-between border-b border-black/10 px-5">
+          <p className="text-[9px] font-semibold tracking-[0.22em] text-black/45 uppercase">
+            Ostren Fit
+          </p>
 
-              <MobileLink
-                href="/shop"
-                label="Shop"
-                onClick={() => setMobileOpen(false)}
-              />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 transition-colors hover:bg-black hover:text-white"
+            aria-label="Close menu"
+          >
+            <X size={18} strokeWidth={1.4} />
+          </button>
+        </div>
 
-              <MobileLink
-                href="/categories"
-                label="Categories"
-                onClick={() => setMobileOpen(false)}
-              />
+        {/* LINKS */}
+        <nav className="px-5 pt-4">
+          <MobileLink
+            href="/shop"
+            label="Shop"
+            onClick={() => setMobileOpen(false)}
+          />
 
-              <MobileLink
-                href="/about"
-                label="About"
-                onClick={() => setMobileOpen(false)}
-              />
+          <MobileLink
+            href="/categories"
+            label="Categories"
+            onClick={() => setMobileOpen(false)}
+          />
 
-              <MobileLink
-                href="/contact"
-                label="Contact"
-                onClick={() => setMobileOpen(false)}
-              />
-            </nav>
+          <MobileLink
+            href="/customize"
+            label="Customize"
+            onClick={() => setMobileOpen(false)}
+            featured
+          />
 
-            <div className="mt-7 flex items-center gap-6 border-t border-black/10 pt-6">
+          <MobileLink
+            href="/about"
+            label="About"
+            onClick={() => setMobileOpen(false)}
+          />
 
-              <Link
-                href="/search"
-                onClick={() => setMobileOpen(false)}
-                aria-label="Search"
-              >
-                <Search size={20} strokeWidth={1.4} />
-              </Link>
+          <MobileLink
+            href="/contact"
+            label="Contact"
+            onClick={() => setMobileOpen(false)}
+          />
+        </nav>
 
-              <Link
-                href="/account"
-                onClick={() => setMobileOpen(false)}
-                aria-label="Account"
-              >
-                <User size={20} strokeWidth={1.4} />
-              </Link>
+        {/* CUSTOM CTA */}
+        <div className="px-5 pt-7">
+          <Link
+            href="/customize"
+            onClick={() => setMobileOpen(false)}
+            className="group flex min-h-[52px] items-center justify-between bg-[#111111] px-5 text-[9px] font-semibold tracking-[0.16em] !text-white uppercase"
+          >
+            Create Your Own
 
-              <Link
-                href="/wishlist"
-                onClick={() => setMobileOpen(false)}
-                aria-label="Wishlist"
-              >
-                <Heart size={20} strokeWidth={1.4} />
-              </Link>
-            </div>
+            <ArrowUpRight
+              size={14}
+              strokeWidth={1.5}
+              className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+            />
+          </Link>
+        </div>
+
+        {/* ACCOUNT ACTIONS */}
+        <div className="absolute inset-x-0 bottom-0 border-t border-black/10 bg-[var(--ostren-off-white)] px-5 py-5">
+          <div className="grid grid-cols-4 gap-2">
+
+            <MobileAction
+              href="/account"
+              label="Account"
+              onClick={() => setMobileOpen(false)}
+            >
+              <User size={18} strokeWidth={1.4} />
+            </MobileAction>
+
+            <MobileAction
+              href="/wishlist"
+              label="Wishlist"
+              onClick={() => setMobileOpen(false)}
+            >
+              <Heart size={18} strokeWidth={1.4} />
+            </MobileAction>
+
+            <MobileAction
+              href="/cart"
+              label="Cart"
+              onClick={() => setMobileOpen(false)}
+            >
+              <ShoppingBag size={18} strokeWidth={1.4} />
+            </MobileAction>
           </div>
         </div>
-      )}
+      </aside>
     </>
   );
 }
+
+
+/* =========================================================
+   DESKTOP LINK
+   ========================================================= */
+
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="text-[10px] font-medium tracking-[0.15em] text-[#111111] uppercase transition-opacity hover:opacity-50"
+    >
+      {children}
+    </Link>
+  );
+}
+
+
+/* =========================================================
+   MOBILE LINK
+   ========================================================= */
 
 function MobileLink({
   href,
   label,
   onClick,
+  featured = false,
 }: {
   href: string;
   label: string;
+  onClick: () => void;
+  featured?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="
+        group flex min-h-[58px]
+        items-center justify-between
+        border-b border-black/10
+        text-[11px] font-medium
+        tracking-[0.14em]
+        text-[#111111] uppercase
+      "
+    >
+      <span>{label}</span>
+
+      {featured && (
+        <span className="text-[7px] tracking-[0.14em] text-black/35">
+          CUSTOM
+        </span>
+      )}
+    </Link>
+  );
+}
+
+
+/* =========================================================
+   MOBILE ACTION
+   ========================================================= */
+
+function MobileAction({
+  href,
+  label,
+  children,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
   onClick: () => void;
 }) {
   return (
     <Link
       href={href}
       onClick={onClick}
-      className="border-b border-black/10 py-5 text-[12px] font-medium tracking-[0.14em] uppercase"
+      className="flex flex-col items-center justify-center gap-2 py-2 text-black/70"
     >
-      {label}
+      {children}
+
+      <span className="text-[7px] tracking-[0.08em] uppercase">
+        {label}
+      </span>
     </Link>
+  );
+}
+
+
+/* =========================================================
+   COUNT BADGE
+   ========================================================= */
+
+function CountBadge({
+  count,
+}: {
+  count: number;
+}) {
+  return (
+    <span className="absolute -right-2.5 -top-2.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#111111] px-1 text-[8px] font-semibold text-white">
+      {count}
+    </span>
   );
 }

@@ -7,16 +7,23 @@
 :root {
   --ostren-black: #111111;
   --ostren-dark: #181818;
-
   --ostren-white: #ffffff;
-  --ostren-off-white: #f7f7f5;
-  --ostren-soft: #f1f1ef;
+
+  --ostren-off-white: #f5f2ec;
+  --ostren-soft: #eeebe5;
+  --ostren-soft-2: #e7e2da;
 
   --ostren-grey: #777777;
-  --ostren-light-grey: #e7e7e4;
+  --ostren-light-grey: #dedbd5;
 
-  --background: #ffffff;
+  --background: #f5f2ec;
+  --surface: #faf8f4;
+  --surface-soft: #eeebe5;
+
   --foreground: #111111;
+  --muted-foreground: rgba(17, 17, 17, 0.52);
+
+  --border: rgba(17, 17, 17, 0.1);
 }
 
 
@@ -37,6 +44,7 @@ body {
   margin: 0;
   padding: 0;
   width: 100%;
+  min-height: 100%;
 }
 
 body {
@@ -53,6 +61,15 @@ body {
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* =========================================================
+   DEFAULT APP BACKGROUND
+   ========================================================= */
+
+main {
+  background: var(--background);
 }
 
 
@@ -87,10 +104,26 @@ button:disabled {
 
 
 /* =========================================================
+   INPUTS
+   ========================================================= */
+
+input,
+textarea,
+select {
+  color: var(--foreground);
+}
+
+::placeholder {
+  color: rgba(17, 17, 17, 0.38);
+}
+
+
+/* =========================================================
    IMAGES
    ========================================================= */
 
 img {
+  display: block;
   max-width: 100%;
 }
 
@@ -118,21 +151,12 @@ img {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #b8b8b5;
+  background: #b8b3ac;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8d8d89;
-}
-
-
-/* =========================================================
-   FORM PLACEHOLDERS
-   ========================================================= */
-
-::placeholder {
-  color: rgba(17, 17, 17, 0.38);
+  background: #8f8982;
 }
 
 
@@ -153,7 +177,9 @@ img {
 .ostren-container {
   width: 100%;
   max-width: 1600px;
+
   margin-inline: auto;
+
   padding-inline: 20px;
 }
 
@@ -167,6 +193,27 @@ img {
   .ostren-container {
     padding-inline: 40px;
   }
+}
+
+
+/* =========================================================
+   GLOBAL SURFACES
+   ========================================================= */
+
+.ostren-surface {
+  background: var(--surface);
+}
+
+.ostren-surface-soft {
+  background: var(--surface-soft);
+}
+
+.ostren-border {
+  border-color: var(--border);
+}
+
+.ostren-muted {
+  color: var(--muted-foreground);
 }
 
 
@@ -196,6 +243,15 @@ img {
 
 .group:hover .product-image {
   transform: scale(1.025);
+}
+
+
+/* =========================================================
+   IMAGE CARD BACKGROUND
+   ========================================================= */
+
+.ostren-image-bg {
+  background: var(--surface-soft);
 }
 
 

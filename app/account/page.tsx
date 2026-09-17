@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import {
   ArrowRight,
   LogOut,
@@ -15,20 +18,84 @@ import Footer from "@/components/layout/Footer";
 
 import ProtectedAccount from "@/components/account/ProtectedAccount";
 
-import { useAuth } from "@/context/AuthContext";
+type AccountUser = {
+  id?: number;
+  full_name?: string;
+  email?: string;
+  phone?: string | null;
+  role?: string;
+  is_active?: boolean;
+};
+
+function getStoredUser(): AccountUser | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const storedUser =
+    localStorage.getItem("ostren-user");
+
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(
+      storedUser
+    ) as AccountUser;
+  } catch {
+    localStorage.removeItem(
+      "ostren-user"
+    );
+
+    localStorage.removeItem(
+      "ostren-access-token"
+    );
+
+    return null;
+  }
+}
 
 export default function AccountPage() {
-  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const [user] =
+    useState<AccountUser | null>(
+      getStoredUser
+    );
+
+  const handleLogout = () => {
+    localStorage.removeItem(
+      "ostren-access-token"
+    );
+
+    localStorage.removeItem(
+      "ostren-user"
+    );
+
+    router.replace(
+      "/account/login"
+    );
+
+    router.refresh();
+  };
 
   const firstName =
-    user?.full_name?.trim().split(" ")[0] || "there";
+    user?.full_name
+      ?.trim()
+      .split(" ")[0] ||
+    "there";
 
   const initial =
-    user?.full_name?.trim().charAt(0).toUpperCase() || "O";
+    user?.full_name
+      ?.trim()
+      .charAt(0)
+      .toUpperCase() ||
+    "O";
 
   return (
     <ProtectedAccount>
-      <main className="min-h-screen bg-white text-[#111111]">
+      <main className="min-h-screen bg-[var(--ostren-off-white)] text-[#111111]">
         <AnnouncementBar />
         <Navbar />
 
@@ -49,28 +116,53 @@ export default function AccountPage() {
                 </h1>
 
                 <p className="mt-5 text-[13px] text-black/50 md:text-sm">
-                  Manage your account and orders.
+                  Manage your account
+                  and orders.
                 </p>
               </div>
 
               {/* PROFILE MINI CARD */}
               <div className="flex items-center gap-4 md:flex-col md:items-end">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f1f1ef] text-lg font-medium md:h-16 md:w-16">
+
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#eeebe5] text-lg font-medium md:h-16 md:w-16">
                   {initial}
                 </div>
 
                 <div className="md:text-right">
                   <p className="max-w-[260px] truncate text-[11px] text-black/50">
-                    {user?.email}
+                    {user?.email ||
+                      "Ostren Fit account"}
                   </p>
 
                   <button
                     type="button"
-                    onClick={logout}
-                    className="mt-3 inline-flex items-center gap-2 border border-black/15 px-4 py-2.5 text-[9px] font-medium tracking-[0.12em] uppercase transition-colors hover:bg-black hover:text-white"
+                    onClick={handleLogout}
+                    className="
+                      mt-3
+                      inline-flex
+                      items-center
+                      gap-2
+                      border
+                      border-black/15
+                      px-4
+                      py-2.5
+                      text-[9px]
+                      font-medium
+                      tracking-[0.12em]
+                      uppercase
+                      transition-colors
+                      hover:bg-black
+                      hover:!text-white
+                    "
                   >
-                    Logout
-                    <LogOut size={13} strokeWidth={1.5} />
+                    <span>
+                      Logout
+                    </span>
+
+                    <LogOut
+                      size={13}
+                      strokeWidth={1.5}
+                    />
                   </button>
                 </div>
               </div>
@@ -126,9 +218,22 @@ function AccountRow({
   return (
     <Link
       href={href}
-      className="group flex min-h-[100px] items-center border border-black/10 bg-white px-5 py-5 transition-colors hover:bg-[#f7f7f5] md:min-h-[112px] md:px-7"
+      className="
+        group
+        flex
+        min-h-[100px]
+        items-center
+        border
+        border-black/10
+        bg-[#F8F5EF]
+        px-5
+        py-5
+        transition-colors
+        hover:bg-[#eeebe5]
+        md:min-h-[112px]
+        md:px-7
+      "
     >
-      {/* ICON */}
       <div className="flex h-11 w-11 shrink-0 items-center justify-center text-black md:h-12 md:w-12">
         <Icon
           size={25}
@@ -136,7 +241,6 @@ function AccountRow({
         />
       </div>
 
-      {/* TEXT */}
       <div className="ml-4 flex-1 md:ml-6">
         <h2 className="text-[15px] font-medium tracking-[-0.01em] md:text-[17px]">
           {title}
@@ -147,7 +251,6 @@ function AccountRow({
         </p>
       </div>
 
-      {/* ARROW */}
       <ArrowRight
         size={19}
         strokeWidth={1.3}

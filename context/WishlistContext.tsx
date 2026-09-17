@@ -13,118 +13,297 @@ export type WishlistItem = {
   id: number;
   name: string;
   price: number;
-  className: string;
+
+  // Actual product image
+  image: string;
+
+  // Keep optional for old wishlist data
+  className?: string;
 };
 
 type WishlistContextType = {
   wishlistItems: WishlistItem[];
-  toggleWishlist: (item: WishlistItem) => void;
-  removeFromWishlist: (id: number) => void;
+
+  toggleWishlist: (
+    item: WishlistItem
+  ) => void;
+
+  removeFromWishlist: (
+    id: number
+  ) => void;
+
   clearWishlist: () => void;
-  isInWishlist: (id: number) => boolean;
+
+  isInWishlist: (
+    id: number
+  ) => boolean;
+
   wishlistCount: number;
+
   wishlistReady: boolean;
 };
 
 const WishlistContext =
-  createContext<WishlistContextType | undefined>(undefined);
+  createContext<
+    WishlistContextType | undefined
+  >(undefined);
+
+const WISHLIST_STORAGE_KEY =
+  "ostren-wishlist";
 
 export function WishlistProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [wishlistItems, setWishlistItems] =
-    useState<WishlistItem[]>([]);
+  const [
+    wishlistItems,
+    setWishlistItems,
+  ] = useState<
+    WishlistItem[]
+  >([]);
 
-  const [wishlistReady, setWishlistReady] =
-    useState(false);
+  const [
+    wishlistReady,
+    setWishlistReady,
+  ] = useState(false);
 
-  const initializedRef = useRef(false);
+  const initializedRef =
+    useRef(false);
+
+  // =====================================================
+  // LOAD WISHLIST
+  // =====================================================
 
   useEffect(() => {
-    if (initializedRef.current) return;
+    if (
+      initializedRef.current
+    ) {
+      return;
+    }
 
-    initializedRef.current = true;
+    initializedRef.current =
+      true;
 
-    let storedItems: WishlistItem[] = [];
+    let storedItems:
+      WishlistItem[] = [];
 
     try {
       const stored =
-        window.localStorage.getItem("ostren-wishlist");
+        window.localStorage.getItem(
+          WISHLIST_STORAGE_KEY
+        );
 
       if (stored) {
-        storedItems = JSON.parse(stored);
+        const parsed =
+          JSON.parse(
+            stored
+          );
+
+        if (
+          Array.isArray(
+            parsed
+          )
+        ) {
+          storedItems =
+            parsed.map(
+              (
+                item:
+                  Partial<WishlistItem>
+              ) => ({
+                id:
+                  Number(
+                    item.id
+                  ),
+
+                name:
+                  String(
+                    item.name ??
+                      ""
+                  ),
+
+                price:
+                  Number(
+                    item.price ??
+                      0
+                  ),
+
+                // Old wishlist items won't
+                // have this field.
+                image:
+                  String(
+                    item.image ??
+                      ""
+                  ),
+
+                className:
+                  item.className,
+              })
+            );
+        }
       }
     } catch {
-      storedItems = [];
+      storedItems =
+        [];
     }
 
-    queueMicrotask(() => {
-      setWishlistItems(storedItems);
-      setWishlistReady(true);
-    });
-  }, []);
+    queueMicrotask(
+      () => {
+        setWishlistItems(
+          storedItems
+        );
 
-  useEffect(() => {
-    if (!wishlistReady) return;
-
-    window.localStorage.setItem(
-      "ostren-wishlist",
-      JSON.stringify(wishlistItems)
-    );
-  }, [wishlistItems, wishlistReady]);
-
-  const toggleWishlist = (item: WishlistItem) => {
-    setWishlistItems((currentItems) => {
-      const exists = currentItems.some(
-        (wishlistItem) =>
-          wishlistItem.id === item.id
-      );
-
-      if (exists) {
-        return currentItems.filter(
-          (wishlistItem) =>
-            wishlistItem.id !== item.id
+        setWishlistReady(
+          true
         );
       }
+    );
+  }, []);
 
-      return [...currentItems, item];
-    });
-  };
+  // =====================================================
+  // SAVE WISHLIST
+  // =====================================================
 
-  const removeFromWishlist = (id: number) => {
-    setWishlistItems((currentItems) =>
-      currentItems.filter(
-        (item) => item.id !== id
+  useEffect(() => {
+    if (
+      !wishlistReady
+    ) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      WISHLIST_STORAGE_KEY,
+      JSON.stringify(
+        wishlistItems
       )
     );
-  };
+  }, [
+    wishlistItems,
+    wishlistReady,
+  ]);
 
-  const clearWishlist = () => {
-    setWishlistItems([]);
-  };
+  // =====================================================
+  // TOGGLE WISHLIST
+  // =====================================================
 
-  const isInWishlist = (id: number) => {
-    return wishlistItems.some(
-      (item) => item.id === id
+  const toggleWishlist = (
+    item:
+      WishlistItem
+  ) => {
+    setWishlistItems(
+      (
+        currentItems
+      ) => {
+        const exists =
+          currentItems.some(
+            (
+              wishlistItem
+            ) =>
+              wishlistItem.id ===
+              item.id
+          );
+
+        if (exists) {
+          return currentItems.filter(
+            (
+              wishlistItem
+            ) =>
+              wishlistItem.id !==
+              item.id
+          );
+        }
+
+        return [
+          ...currentItems,
+          {
+            ...item,
+            image:
+              item.image ||
+              "",
+          },
+        ];
+      }
     );
   };
 
-  const wishlistCount = useMemo(
-    () => wishlistItems.length,
-    [wishlistItems]
-  );
+  // =====================================================
+  // REMOVE
+  // =====================================================
+
+  const removeFromWishlist =
+    (
+      id: number
+    ) => {
+      setWishlistItems(
+        (
+          currentItems
+        ) =>
+          currentItems.filter(
+            (
+              item
+            ) =>
+              item.id !==
+              id
+          )
+      );
+    };
+
+  // =====================================================
+  // CLEAR
+  // =====================================================
+
+  const clearWishlist =
+    () => {
+      setWishlistItems(
+        []
+      );
+    };
+
+  // =====================================================
+  // CHECK
+  // =====================================================
+
+  const isInWishlist =
+    (
+      id: number
+    ) => {
+      return wishlistItems.some(
+        (
+          item
+        ) =>
+          item.id ===
+          id
+      );
+    };
+
+  // =====================================================
+  // COUNT
+  // =====================================================
+
+  const wishlistCount =
+    useMemo(
+      () =>
+        wishlistItems.length,
+      [
+        wishlistItems,
+      ]
+    );
 
   return (
     <WishlistContext.Provider
       value={{
         wishlistItems,
+
         toggleWishlist,
+
         removeFromWishlist,
+
         clearWishlist,
+
         isInWishlist,
+
         wishlistCount,
+
         wishlistReady,
       }}
     >
@@ -134,7 +313,10 @@ export function WishlistProvider({
 }
 
 export function useWishlist() {
-  const context = useContext(WishlistContext);
+  const context =
+    useContext(
+      WishlistContext
+    );
 
   if (!context) {
     throw new Error(

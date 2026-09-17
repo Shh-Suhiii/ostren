@@ -12,23 +12,56 @@ export default function ShopFilters({
   onCategoryChange,
 }: ShopFiltersProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="w-full border-b border-black/10">
+      <div
+        className="
+          flex items-center gap-7
+          overflow-x-auto
+          scrollbar-hide
+          px-0
+          md:gap-9
+        "
+      >
+        {categories.map((category) => {
+          const isActive = activeCategory === category;
 
-      {categories.map((category) => (
-        <button
-          key={category}
-          type="button"
-          onClick={() => onCategoryChange(category)}
-          className={`shrink-0 border px-5 py-3 text-[9px] font-semibold tracking-[0.16em] uppercase transition-colors ${
-            activeCategory === category
-              ? "border-[#063b63] bg-[#063b63] text-white"
-              : "border-[#063b63]/15 bg-white text-[#063b63] hover:border-[#063b63]/40"
-          }`}
-        >
-          {category}
-        </button>
-      ))}
+          return (
+            <button
+              key={category}
+              type="button"
+              onClick={() => onCategoryChange(category)}
+              className={`
+                relative shrink-0
+                pb-4 pt-2
+                text-[10px] font-medium
+                tracking-[0.12em] uppercase
+                transition-colors duration-200
+                md:text-[11px]
+                ${
+                  isActive
+                    ? "text-[#111111]"
+                    : "text-black/40 hover:text-[#111111]"
+                }
+              `}
+            >
+              {category}
 
+              <span
+                className={`
+                  absolute bottom-0 left-0 h-[1.5px]
+                  bg-[#111111]
+                  transition-all duration-300
+                  ${
+                    isActive
+                      ? "w-full opacity-100"
+                      : "w-0 opacity-0"
+                  }
+                `}
+              />
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

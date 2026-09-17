@@ -8,12 +8,12 @@ interface ProductCardProps {
 }
 
 const placeholderClasses = [
-  "bg-[#e7f1f5]",
-  "bg-[#eef0ec]",
-  "bg-[#e4edf1]",
-  "bg-[#e9e9e7]",
-  "bg-[#e8f0f3]",
-  "bg-[#e9ece8]",
+  "bg-[var(--ostren-soft)]",
+  "bg-[#eee9e2]",
+  "bg-[#ebe7e0]",
+  "bg-[#f0ece6]",
+  "bg-[#e9e4dd]",
+  "bg-[#efebe5]",
 ];
 
 export function getProductPlaceholderClass(
@@ -36,7 +36,6 @@ export default function ProductCard({
       ? "New"
       : null;
 
-  // Prevent crash if images are missing
   const images = product.images ?? [];
 
   const mainImage =
@@ -52,22 +51,24 @@ export default function ProductCard({
         className="block"
       >
 
+        {/* PRODUCT IMAGE */}
         <div
-          className={`relative aspect-[4/5] overflow-hidden ${productClassName}`}
+          className={`relative aspect-[3/4] overflow-hidden ${productClassName}`}
         >
 
+          {/* LABEL */}
           {label && (
             <div
-              className={`absolute left-3 top-3 z-10 px-2.5 py-1 text-[8px] font-semibold tracking-[0.14em] uppercase ${
-                product.is_best_seller
-                  ? "bg-[#063b63] text-white"
-                  : "bg-white/85 text-[#063b63] backdrop-blur-sm"
-              }`}
+              className={`absolute left-3 top-3 z-10 px-2.5 py-1.5 text-[8px] font-semibold tracking-[0.14em] uppercase ${product.is_best_seller
+                  ? "bg-[#111111] text-white"
+                  : "bg-[#F8F5EF]/95 text-[#111111] backdrop-blur-sm"
+                }`}
             >
               {label}
             </div>
           )}
 
+          {/* PRODUCT IMAGE */}
           {mainImage ? (
             <img
               src={mainImage.image_url}
@@ -75,45 +76,48 @@ export default function ProductCard({
                 mainImage.alt_text ||
                 product.name
               }
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.025]"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-
               <div className="text-center">
 
-                <span className="font-serif text-3xl tracking-wide text-[#063b63]/15 md:text-4xl">
-                  ostren
-                </span>
+                <p className="text-[28px] font-semibold tracking-[-0.06em] text-black/10 md:text-[36px]">
+                  Of.
+                </p>
 
-                <p className="mt-2 text-[7px] font-semibold tracking-[0.3em] text-[#063b63]/20 uppercase">
-                  Product image
+                <p className="mt-2 text-[7px] font-medium tracking-[0.28em] text-black/20 uppercase">
+                  Ostren Fit
                 </p>
 
               </div>
-
             </div>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 flex translate-y-full justify-center pb-4 transition-transform duration-500 group-hover:translate-y-0">
-            <span className="bg-[#063b63] px-5 py-3 text-[9px] font-semibold tracking-[0.16em] text-white uppercase">
-              View product
-            </span>
+          {/* QUICK VIEW */}
+          <div className="absolute inset-x-3 bottom-3 hidden translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:block">
+            <div className="bg-[#F8F5EF]/95 py-3 text-center text-[9px] font-semibold tracking-[0.15em] text-[#111111] uppercase backdrop-blur-sm transition-colors duration-300 group-hover:bg-[#111111] group-hover:text-white">
+              View Product
+            </div>
           </div>
 
         </div>
 
-        <div className="pt-4">
+        {/* PRODUCT INFO */}
+        <div className="pt-3.5 md:pt-4">
 
-          <p className="mb-1 text-[8px] font-semibold tracking-[0.14em] text-[#0877b5] uppercase">
-            {product.category?.name || "ostren"}
+          {/* CATEGORY */}
+          <p className="mb-1 text-[8px] font-medium tracking-[0.14em] text-black/40 uppercase">
+            {product.category?.name || "Ostren Fit"}
           </p>
 
-          <h3 className="text-[12px] font-medium tracking-[0.02em] text-[#15191d] md:text-sm">
+          {/* NAME */}
+          <h3 className="pr-7 text-[11px] font-medium leading-5 text-[#111111] md:text-[12px]">
             {product.name}
           </h3>
 
-          <p className="mt-1 text-xs text-black/55">
+          {/* PRICE */}
+          <p className="mt-1 text-[11px] text-black/55 md:text-[12px]">
             ₹
             {Number(product.price).toLocaleString(
               "en-IN"
@@ -124,12 +128,18 @@ export default function ProductCard({
 
       </Link>
 
-      <WishlistButton
-        productId={product.id}
-        productName={product.name}
-        productPrice={Number(product.price)}
-        productClassName={productClassName}
-      />
+      {/* WISHLIST */}
+      <div className="absolute right-2 top-2 z-20">
+        <WishlistButton
+          productId={product.id}
+          productName={product.name}
+          productPrice={Number(product.price)}
+          productImage={
+            mainImage?.image_url || ""
+          }
+          productClassName={productClassName}
+        />
+      </div>
 
     </article>
   );
