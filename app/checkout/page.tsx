@@ -2,6 +2,7 @@
 
 import {
   FormEvent,
+  ReactNode,
   useEffect,
   useState,
 } from "react";
@@ -13,9 +14,12 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  CreditCard,
+  Landmark,
   Loader2,
   MapPin,
   ShoppingBag,
+  Smartphone,
   WalletCards,
 } from "lucide-react";
 
@@ -29,6 +33,10 @@ import IndiaLocationFields from "@/components/common/IndiaLocationFields";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:5000";
+
+// ========================================================
+// TYPES
+// ========================================================
 
 type CheckoutForm = {
   fullName: string;
@@ -94,6 +102,12 @@ type PostalResponse = {
   PostOffice?: PostalOffice[] | null;
 };
 
+type PaymentMethod =
+  | "cod"
+  | "upi"
+  | "card"
+  | "netbanking";
+
 const initialForm: CheckoutForm = {
   fullName: "",
   email: "",
@@ -103,6 +117,10 @@ const initialForm: CheckoutForm = {
   state: "",
   pincode: "",
 };
+
+// ========================================================
+// CHECKOUT PAGE
+// ========================================================
 
 export default function CheckoutPage() {
   const {
@@ -171,6 +189,17 @@ export default function CheckoutPage() {
   ] = useState("");
 
   // ======================================================
+  // PAYMENT
+  // ======================================================
+
+  const [
+    paymentMethod,
+    setPaymentMethod,
+  ] = useState<PaymentMethod>(
+    "cod"
+  );
+
+  // ======================================================
   // ORDER
   // ======================================================
 
@@ -189,6 +218,13 @@ export default function CheckoutPage() {
     setConfirmedTotal,
   ] = useState<number | null>(
     null
+  );
+
+  const [
+    confirmedPaymentMethod,
+    setConfirmedPaymentMethod,
+  ] = useState<PaymentMethod>(
+    "cod"
   );
 
   const [
@@ -420,7 +456,7 @@ export default function CheckoutPage() {
   }
 
   // ======================================================
-  // UPDATE NORMAL FIELD
+  // UPDATE FIELD
   // ======================================================
 
   function updateField(
@@ -481,10 +517,10 @@ export default function CheckoutPage() {
 
       if (
         result?.Status !==
-        "Success" ||
+          "Success" ||
         !result.PostOffice ||
         result.PostOffice.length ===
-        0
+          0
       ) {
         setPincodeError(
           "We couldn't find this pincode."
@@ -626,6 +662,17 @@ export default function CheckoutPage() {
   }
 
   // ======================================================
+  // PAYMENT CHANGE
+  // ======================================================
+
+  function selectPaymentMethod(
+    method: PaymentMethod
+  ) {
+    setPaymentMethod(method);
+    setError("");
+  }
+
+  // ======================================================
   // PLACE ORDER
   // ======================================================
 
@@ -679,6 +726,24 @@ export default function CheckoutPage() {
       return;
     }
 
+    // -----------------------------------------------
+    // ONLINE PAYMENT SAFETY
+    // -----------------------------------------------
+    // Razorpay will be connected in the next step.
+    // Until then, never create an unpaid order and
+    // display it as successfully paid.
+    // -----------------------------------------------
+
+    if (
+      paymentMethod !== "cod"
+    ) {
+      setError(
+        "Online payment setup is being connected. Please use Cash on Delivery for now."
+      );
+
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -719,6 +784,9 @@ export default function CheckoutPage() {
                 pincode:
                   form.pincode.trim(),
 
+                payment_method:
+                  paymentMethod,
+
                 items:
                   cartItems.map(
                     (item) => ({
@@ -740,7 +808,7 @@ export default function CheckoutPage() {
       if (!response.ok) {
         throw new Error(
           data.message ||
-          "Unable to place your order."
+            "Unable to place your order."
         );
       }
 
@@ -756,6 +824,10 @@ export default function CheckoutPage() {
 
       setConfirmedTotal(
         data.order.total
+      );
+
+      setConfirmedPaymentMethod(
+        paymentMethod
       );
 
       setOrderPlaced(true);
@@ -842,23 +914,23 @@ export default function CheckoutPage() {
 
               {confirmedTotal !==
                 null && (
-                  <>
-                    <div className="my-5 h-px bg-black/10" />
+                <>
+                  <div className="my-5 h-px bg-black/10" />
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] text-black/40">
-                        Order Total
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-black/40">
+                      Order Total
+                    </span>
 
-                      <span className="text-[11px] font-medium">
-                        ₹
-                        {confirmedTotal.toLocaleString(
-                          "en-IN"
-                        )}
-                      </span>
-                    </div>
-                  </>
-                )}
+                    <span className="text-[11px] font-medium">
+                      ₹
+                      {confirmedTotal.toLocaleString(
+                        "en-IN"
+                      )}
+                    </span>
+                  </div>
+                </>
+              )}
 
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-[9px] text-black/40">
@@ -866,7 +938,9 @@ export default function CheckoutPage() {
                 </span>
 
                 <span className="text-[10px] font-medium">
-                  Cash on Delivery
+                  {getPaymentLabel(
+                    confirmedPaymentMethod
+                  )}
                 </span>
               </div>
             </div>
@@ -1030,10 +1104,11 @@ export default function CheckoutPage() {
                                 savedAddress
                               )
                             }
-                            className={`relative min-h-[145px] border p-5 text-left transition ${selected
+                            className={`relative min-h-[145px] border p-5 text-left transition ${
+                              selected
                                 ? "border-black bg-[#F8F5EF]"
                                 : "border-black/10 bg-white/50 hover:border-black/30"
-                              }`}
+                            }`}
                           >
                             <div className="flex items-start justify-between gap-3">
                               <MapPin
@@ -1281,10 +1356,11 @@ export default function CheckoutPage() {
                           )
                         }
                         placeholder="6-digit pincode"
-                        className={`h-12 w-full border bg-[#F8F5EF] px-4 pr-11 text-[11px] text-[#111111] outline-none transition ${pincodeError
+                        className={`h-12 w-full border bg-[#F8F5EF] px-4 pr-11 text-[11px] text-[#111111] outline-none transition ${
+                          pincodeError
                             ? "border-red-300 focus:border-red-500"
                             : "border-black/10 focus:border-black"
-                          }`}
+                        }`}
                       />
 
                       {checkingPincode && (
@@ -1411,27 +1487,132 @@ export default function CheckoutPage() {
                 {/* PAYMENT */}
 
                 <div className="mt-4 border border-black/10 bg-[#F8F5EF] p-5">
-                  <div className="flex gap-3">
+                  <div className="flex items-start gap-3">
                     <WalletCards
                       size={17}
                       strokeWidth={1.4}
                       className="mt-0.5 shrink-0"
                     />
 
-                    <div>
+                    <div className="w-full">
                       <p className="text-[8px] font-semibold tracking-[0.14em] uppercase">
                         Payment Method
                       </p>
 
-                      <p className="mt-2 text-[9px] font-medium">
-                        Cash on Delivery
+                      <p className="mt-2 text-[8px] leading-5 text-black/40">
+                        Choose how you
+                        would like to
+                        pay.
                       </p>
 
-                      <p className="mt-1 text-[8px] leading-5 text-black/40">
-                        Pay when your
-                        order is
-                        delivered.
-                      </p>
+                      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <PaymentOption
+                          title="UPI"
+                          description="Google Pay, PhonePe, Paytm & more"
+                          selected={
+                            paymentMethod ===
+                            "upi"
+                          }
+                          onClick={() =>
+                            selectPaymentMethod(
+                              "upi"
+                            )
+                          }
+                          icon={
+                            <Smartphone
+                              size={16}
+                              strokeWidth={
+                                1.4
+                              }
+                            />
+                          }
+                        />
+
+                        <PaymentOption
+                          title="Credit / Debit Card"
+                          description="Visa, Mastercard, RuPay & more"
+                          selected={
+                            paymentMethod ===
+                            "card"
+                          }
+                          onClick={() =>
+                            selectPaymentMethod(
+                              "card"
+                            )
+                          }
+                          icon={
+                            <CreditCard
+                              size={16}
+                              strokeWidth={
+                                1.4
+                              }
+                            />
+                          }
+                        />
+
+                        <PaymentOption
+                          title="Net Banking"
+                          description="Pay securely through your bank"
+                          selected={
+                            paymentMethod ===
+                            "netbanking"
+                          }
+                          onClick={() =>
+                            selectPaymentMethod(
+                              "netbanking"
+                            )
+                          }
+                          icon={
+                            <Landmark
+                              size={16}
+                              strokeWidth={
+                                1.4
+                              }
+                            />
+                          }
+                        />
+
+                        <PaymentOption
+                          title="Cash on Delivery"
+                          description="Pay when your order is delivered"
+                          selected={
+                            paymentMethod ===
+                            "cod"
+                          }
+                          onClick={() =>
+                            selectPaymentMethod(
+                              "cod"
+                            )
+                          }
+                          icon={
+                            <ShoppingBag
+                              size={16}
+                              strokeWidth={
+                                1.4
+                              }
+                            />
+                          }
+                        />
+                      </div>
+
+                      {paymentMethod !==
+                        "cod" && (
+                        <div className="mt-4 border border-black/10 bg-white/50 px-4 py-3">
+                          <p className="text-[8px] leading-5 text-black/45">
+                            Online
+                            payments will
+                            be processed
+                            securely
+                            through our
+                            payment
+                            partner.
+                            Payment setup
+                            is currently
+                            being
+                            connected.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1476,20 +1657,26 @@ export default function CheckoutPage() {
                         className="animate-spin"
                       />
 
-                      Placing Order
+                      {paymentMethod ===
+                      "cod"
+                        ? "Placing Order"
+                        : "Processing Payment"}
                     </>
-                  ) : (
+                  ) : paymentMethod ===
+                    "cod" ? (
                     "Place Order"
+                  ) : (
+                    `Pay ₹${total.toLocaleString(
+                      "en-IN"
+                    )}`
                   )}
                 </button>
 
                 <p className="mt-4 text-[8px] leading-5 text-black/35">
-                  By placing your order,
-                  you confirm your
-                  delivery details.
-                  Payment will be
-                  collected via Cash on
-                  Delivery.
+                  {paymentMethod ===
+                  "cod"
+                    ? "By placing your order, you confirm your delivery details. Payment will be collected on delivery."
+                    : "You will be redirected to our secure payment partner to complete your payment."}
                 </p>
               </form>
             </div>
@@ -1526,11 +1713,14 @@ export default function CheckoutPage() {
                         className="block shrink-0"
                       >
                         <div className="relative h-20 w-16 overflow-hidden bg-[#eeebe5]">
-
                           {item.image ? (
                             <img
-                              src={item.image}
-                              alt={item.name}
+                              src={
+                                item.image
+                              }
+                              alt={
+                                item.name
+                              }
                               className="h-full w-full object-cover"
                             />
                           ) : (
@@ -1540,25 +1730,27 @@ export default function CheckoutPage() {
                               </span>
                             </div>
                           )}
-
                         </div>
                       </Link>
 
                       {/* PRODUCT INFO */}
 
                       <div className="flex min-w-0 flex-1 justify-between gap-3">
-
                         <div className="min-w-0">
-
                           <Link
                             href={`/product/${item.id}`}
                             className="block truncate text-[10px] font-medium text-black transition-opacity hover:opacity-60"
                           >
-                            {item.name}
+                            {
+                              item.name
+                            }
                           </Link>
 
                           <p className="mt-1 text-[8px] text-black/35">
-                            Qty: {item.quantity}
+                            Qty:{" "}
+                            {
+                              item.quantity
+                            }
                           </p>
 
                           <p className="mt-1 text-[8px] text-black/35">
@@ -1568,7 +1760,6 @@ export default function CheckoutPage() {
                             )}{" "}
                             each
                           </p>
-
                         </div>
 
                         <p className="shrink-0 text-[10px] font-medium">
@@ -1580,9 +1771,7 @@ export default function CheckoutPage() {
                             "en-IN"
                           )}
                         </p>
-
                       </div>
-
                     </div>
                   )
                 )}
@@ -1622,6 +1811,22 @@ export default function CheckoutPage() {
                   )}
                 </span>
               </div>
+
+              {/* SELECTED PAYMENT */}
+
+              <div className="mt-6 border-t border-black/10 pt-5">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-[8px] text-black/40">
+                    Payment
+                  </span>
+
+                  <span className="text-right text-[8px] font-medium">
+                    {getPaymentLabel(
+                      paymentMethod
+                    )}
+                  </span>
+                </div>
+              </div>
             </aside>
           </div>
         </div>
@@ -1639,16 +1844,20 @@ export default function CheckoutPage() {
 type FieldProps = {
   label: string;
   value: string;
+
   onChange: (
     value: string
   ) => void;
+
   type?: string;
   required?: boolean;
+
   inputMode?:
-  | "text"
-  | "numeric"
-  | "tel"
-  | "email";
+    | "text"
+    | "numeric"
+    | "tel"
+    | "email";
+
   autoComplete?: string;
 };
 
@@ -1706,4 +1915,94 @@ function SummaryRow({
       <span>{value}</span>
     </div>
   );
+}
+
+// ========================================================
+// PAYMENT OPTION
+// ========================================================
+
+function PaymentOption({
+  title,
+  description,
+  selected,
+  onClick,
+  icon,
+}: {
+  title: string;
+  description: string;
+  selected: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-[82px] items-start gap-3 border p-4 text-left transition ${
+        selected
+          ? "border-black bg-white"
+          : "border-black/10 bg-transparent hover:border-black/30"
+      }`}
+    >
+      <div
+        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center ${
+          selected
+            ? "bg-black text-white"
+            : "bg-black/[0.04] text-black/45"
+        }`}
+      >
+        {icon}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[9px] font-medium">
+            {title}
+          </p>
+
+          <div
+            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+              selected
+                ? "border-black bg-black text-white"
+                : "border-black/20"
+            }`}
+          >
+            {selected && (
+              <Check
+                size={9}
+                strokeWidth={2}
+              />
+            )}
+          </div>
+        </div>
+
+        <p className="mt-1.5 text-[7px] leading-4 text-black/40">
+          {description}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+// ========================================================
+// PAYMENT LABEL
+// ========================================================
+
+function getPaymentLabel(
+  method: PaymentMethod
+) {
+  switch (method) {
+    case "upi":
+      return "UPI";
+
+    case "card":
+      return "Credit / Debit Card";
+
+    case "netbanking":
+      return "Net Banking";
+
+    case "cod":
+    default:
+      return "Cash on Delivery";
+  }
 }
