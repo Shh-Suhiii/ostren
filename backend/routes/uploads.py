@@ -1,9 +1,11 @@
 import os
 import uuid
 
+import cloudinary
+import cloudinary.uploader
+
 from flask import (
     Blueprint,
-    current_app,
     jsonify,
     request,
 )
@@ -13,16 +15,12 @@ from flask_jwt_extended import (
     get_jwt_identity,
 )
 
-from werkzeug.utils import (
-    secure_filename,
-)
+from werkzeug.utils import secure_filename
 
 from extensions import db
 from models import User
 
-from utils.admin_required import (
-    admin_required,
-)
+from utils.admin_required import admin_required
 
 
 uploads_bp = Blueprint(
@@ -32,6 +30,22 @@ uploads_bp = Blueprint(
 )
 
 
+# =========================================================
+# CLOUDINARY
+# =========================================================
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True,
+)
+
+
+# =========================================================
+# FILE SETTINGS
+# =========================================================
+
 ALLOWED_EXTENSIONS = {
     "png",
     "jpg",
@@ -39,17 +53,13 @@ ALLOWED_EXTENSIONS = {
     "webp",
 }
 
-
 ALLOWED_MIME_TYPES = {
     "image/png",
     "image/jpeg",
     "image/webp",
 }
 
-
-MAX_FILE_SIZE = (
-    10 * 1024 * 1024
-)
+MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 # =========================================================
@@ -59,59 +69,128 @@ MAX_FILE_SIZE = (
 def allowed_file(filename):
     return (
         "." in filename
-        and filename
-        .rsplit(".", 1)[1]
-        .lower()
+        and filename.rsplit(".", 1)[1].lower()
         in ALLOWED_EXTENSIONS
     )
 
 
 def get_file_size(file):
-    file.seek(
-        0,
-        os.SEEK_END
-    )
-
-    size = (
-        file.tell()
-    )
-
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
     file.seek(0)
 
     return size
 
 
-def create_unique_filename(
-    filename
+def create_public_id(filename):
+    safe_filename = secure_filename(filename)
+
+    name = os.path.splitext(
+        safe_filename
+    )[0]
+
+    if not name:
+        name = "image"
+
+    return (
+        f"{name}-"
+        f"{uuid.uuid4().hex}"
+    )
+
+
+def validate_image(file):
+    if (
+        not file
+        or not file.filename
+    ):
+        return (
+            "No image selected",
+            400,
+        )
+
+    if not allowed_file(
+        file.filename
+    ):
+        return (
+            "Only PNG, JPG, JPEG and WEBP images are allowed",
+            400,
+        )
+
+    if (
+        file.mimetype
+        not in ALLOWED_MIME_TYPES
+    ):
+        return (
+            "Invalid image format",
+            400,
+        )
+
+    file_size = get_file_size(
+        file
+    )
+
+    if file_size <= 0:
+        return (
+            "Image file is empty",
+            400,
+        )
+
+    if (
+        file_size >
+        MAX_FILE_SIZE
+    ):
+        return (
+            "Image must be smaller than 10MB",
+            413,
+        )
+
+    return None
+
+
+def upload_to_cloudinary(
+    file,
+    folder,
 ):
-    safe_filename = (
-        secure_filename(
-            filename
+    public_id = create_public_id(
+        file.filename
+    )
+
+    file.seek(0)
+
+    result = (
+        cloudinary.uploader.upload(
+            file,
+            folder=folder,
+            public_id=public_id,
+            resource_type="image",
+            overwrite=False,
         )
     )
 
-    extension = (
-        safe_filename
-        .rsplit(".", 1)[1]
-        .lower()
+    secure_url = result.get(
+        "secure_url"
     )
 
-    return (
-        f"{uuid.uuid4().hex}."
-        f"{extension}"
-    )
+    if not secure_url:
+        raise RuntimeError(
+            "Cloudinary did not return an image URL"
+        )
 
-
-def get_project_directory():
-    # backend/
-    backend_directory = (
-        current_app.root_path
-    )
-
-    # /ostren
-    return os.path.dirname(
-        backend_directory
-    )
+    return {
+        "image_url": secure_url,
+        "public_id": result.get(
+            "public_id"
+        ),
+        "width": result.get(
+            "width"
+        ),
+        "height": result.get(
+            "height"
+        ),
+        "format": result.get(
+            "format"
+        ),
+    }
 
 
 # =========================================================
@@ -133,129 +212,47 @@ def upload_product_image():
                 "No image file provided",
         }), 400
 
-
     file = request.files[
         "image"
     ]
 
-
-    if (
-        not file
-        or not file.filename
-    ):
-        return jsonify({
-            "success": False,
-            "message":
-                "No image selected",
-        }), 400
-
-
-    if not allowed_file(
-        file.filename
-    ):
-        return jsonify({
-            "success": False,
-            "message": (
-                "Only PNG, JPG, JPEG "
-                "and WEBP images are allowed"
-            ),
-        }), 400
-
-
-    if (
-        file.mimetype
-        not in ALLOWED_MIME_TYPES
-    ):
-        return jsonify({
-            "success": False,
-            "message":
-                "Invalid image format",
-        }), 400
-
-
-    file_size = (
-        get_file_size(
-            file
-        )
+    validation_error = (
+        validate_image(file)
     )
 
+    if validation_error:
+        message, status_code = (
+            validation_error
+        )
 
-    if (
-        file_size >
-        MAX_FILE_SIZE
-    ):
         return jsonify({
             "success": False,
-            "message": (
-                "Image must be smaller "
-                "than 10MB"
-            ),
-        }), 413
-
+            "message": message,
+        }), status_code
 
     try:
-        unique_filename = (
-            create_unique_filename(
-                file.filename
+        uploaded = (
+            upload_to_cloudinary(
+                file,
+                "ostren/products",
             )
         )
-
-
-        project_directory = (
-            get_project_directory()
-        )
-
-
-        upload_directory = (
-            os.path.join(
-                project_directory,
-                "public",
-                "uploads",
-                "products",
-            )
-        )
-
-
-        os.makedirs(
-            upload_directory,
-            exist_ok=True,
-        )
-
-
-        file_path = (
-            os.path.join(
-                upload_directory,
-                unique_filename,
-            )
-        )
-
-
-        file.save(
-            file_path
-        )
-
-
-        public_url = (
-            "/uploads/products/"
-            f"{unique_filename}"
-        )
-
 
         return jsonify({
             "success": True,
-
-            "message": (
-                "Image uploaded "
-                "successfully"
-            ),
-
+            "message":
+                "Image uploaded successfully",
             "image_url":
-                public_url,
-
-            "filename":
-                unique_filename,
+                uploaded["image_url"],
+            "public_id":
+                uploaded["public_id"],
+            "width":
+                uploaded["width"],
+            "height":
+                uploaded["height"],
+            "format":
+                uploaded["format"],
         }), 201
-
 
     except Exception as error:
         print(
@@ -264,15 +261,10 @@ def upload_product_image():
             str(error),
         )
 
-
         return jsonify({
             "success": False,
-
             "message":
                 "Unable to upload image",
-
-            "error":
-                str(error),
         }), 500
 
 
@@ -285,6 +277,7 @@ def upload_product_image():
 )
 @jwt_required()
 def upload_customization_image():
+
     # -----------------------------------------------------
     # CURRENT USER
     # -----------------------------------------------------
@@ -292,7 +285,6 @@ def upload_customization_image():
     identity = (
         get_jwt_identity()
     )
-
 
     try:
         user_id = int(
@@ -308,12 +300,10 @@ def upload_customization_image():
                 "Invalid authentication token",
         }), 401
 
-
     user = db.session.get(
         User,
-        user_id
+        user_id,
     )
-
 
     if not user:
         return jsonify({
@@ -322,7 +312,6 @@ def upload_customization_image():
                 "User not found",
         }), 401
 
-
     if not user.is_active:
         return jsonify({
             "success": False,
@@ -330,8 +319,6 @@ def upload_customization_image():
                 "Account is inactive",
         }), 403
 
-
-    # Customer uploads only.
     if (
         user.role !=
         "customer"
@@ -342,9 +329,8 @@ def upload_customization_image():
                 "Customer account required",
         }), 403
 
-
     # -----------------------------------------------------
-    # FILE
+    # IMAGE
     # -----------------------------------------------------
 
     if (
@@ -357,163 +343,55 @@ def upload_customization_image():
                 "No image file provided",
         }), 400
 
-
     file = request.files[
         "image"
     ]
 
-
-    if (
-        not file
-        or not file.filename
-    ):
-        return jsonify({
-            "success": False,
-            "message":
-                "No image selected",
-        }), 400
-
-
-    # -----------------------------------------------------
-    # EXTENSION
-    # -----------------------------------------------------
-
-    if not allowed_file(
-        file.filename
-    ):
-        return jsonify({
-            "success": False,
-            "message": (
-                "Only PNG, JPG, JPEG "
-                "and WEBP images are allowed"
-            ),
-        }), 400
-
-
-    # -----------------------------------------------------
-    # MIME TYPE
-    # -----------------------------------------------------
-
-    if (
-        file.mimetype
-        not in ALLOWED_MIME_TYPES
-    ):
-        return jsonify({
-            "success": False,
-            "message":
-                "Invalid image format",
-        }), 400
-
-
-    # -----------------------------------------------------
-    # SIZE
-    # -----------------------------------------------------
-
-    file_size = (
-        get_file_size(
-            file
-        )
+    validation_error = (
+        validate_image(file)
     )
 
+    if validation_error:
+        message, status_code = (
+            validation_error
+        )
 
-    if (
-        file_size <= 0
-    ):
         return jsonify({
             "success": False,
-            "message":
-                "Image file is empty",
-        }), 400
-
-
-    if (
-        file_size >
-        MAX_FILE_SIZE
-    ):
-        return jsonify({
-            "success": False,
-            "message": (
-                "Image must be smaller "
-                "than 10MB"
-            ),
-        }), 413
-
+            "message": message,
+        }), status_code
 
     # -----------------------------------------------------
-    # SAVE
+    # CLOUDINARY
     # -----------------------------------------------------
 
     try:
-        unique_filename = (
-            create_unique_filename(
-                file.filename
-            )
-        )
-
-
-        project_directory = (
-            get_project_directory()
-        )
-
-
-        # Keep customization files separate
-        # from admin product photography.
-
-        upload_directory = (
-            os.path.join(
-                project_directory,
-                "public",
-                "uploads",
-                "customizations",
-                str(
-                    user.id
+        uploaded = (
+            upload_to_cloudinary(
+                file,
+                (
+                    "ostren/"
+                    "customizations/"
+                    f"user-{user.id}"
                 ),
             )
         )
 
-
-        os.makedirs(
-            upload_directory,
-            exist_ok=True,
-        )
-
-
-        file_path = (
-            os.path.join(
-                upload_directory,
-                unique_filename,
-            )
-        )
-
-
-        file.save(
-            file_path
-        )
-
-
-        public_url = (
-            "/uploads/"
-            "customizations/"
-            f"{user.id}/"
-            f"{unique_filename}"
-        )
-
-
         return jsonify({
             "success": True,
-
-            "message": (
-                "Customization image "
-                "uploaded successfully"
-            ),
-
+            "message":
+                "Customization image uploaded successfully",
             "image_url":
-                public_url,
-
-            "filename":
-                unique_filename,
+                uploaded["image_url"],
+            "public_id":
+                uploaded["public_id"],
+            "width":
+                uploaded["width"],
+            "height":
+                uploaded["height"],
+            "format":
+                uploaded["format"],
         }), 201
-
 
     except Exception as error:
         print(
@@ -522,15 +400,8 @@ def upload_customization_image():
             str(error),
         )
 
-
         return jsonify({
             "success": False,
-
-            "message": (
-                "Unable to upload "
-                "customization image"
-            ),
-
-            "error":
-                str(error),
+            "message":
+                "Unable to upload customization image",
         }), 500
