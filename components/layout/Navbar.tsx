@@ -19,7 +19,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const mounted = useSyncExternalStore(
-    () => () => {},
+    () => () => { },
     () => true,
     () => false
   );
@@ -65,6 +65,7 @@ export default function Navbar() {
               height={120}
               className="h-auto w-[74px] object-contain md:w-[90px] lg:w-[96px]"
               priority
+              unoptimized
             />
           </Link>
 
